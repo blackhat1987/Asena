@@ -5,7 +5,8 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.ComCtrls,
-  System.Win.ScktComp, untClientObject, untCommands;
+  System.Win.ScktComp, untClientObject, untCommands, untUtils, untControl,
+  System.ImageList, Vcl.ImgList, Vcl.Menus;
 
 type
   TForm1 = class(TForm)
@@ -13,6 +14,9 @@ type
     Panel1: TPanel;
     Button1: TButton;
     ServerSocket1: TServerSocket;
+    ilFlags: TImageList;
+    PopupMenu1: TPopupMenu;
+    OpenCommandcenter1: TMenuItem;
     procedure ServerSocket1ClientConnect(Sender: TObject;
       Socket: TCustomWinSocket);
     procedure Button1Click(Sender: TObject);
@@ -24,6 +28,7 @@ type
     procedure ServerSocket1ClientRead(Sender: TObject;
       Socket: TCustomWinSocket);
     procedure ServerSocket1Listen(Sender: TObject; Socket: TCustomWinSocket);
+    procedure ListView1DblClick(Sender: TObject);
   private
     { Private-Deklarationen }
   public
@@ -37,9 +42,28 @@ implementation
 
 {$R *.dfm}
 
+
 procedure TForm1.Button1Click(Sender: TObject);
 begin
   ServerSocket1.Active := True;
+end;
+
+procedure TForm1.ListView1DblClick(Sender: TObject);
+var
+  tempThread:TClientThread;
+  tempFormControl:TForm3;
+begin
+  if listview1.Selected <> nil then
+  begin
+    tempThread := TClientThread(listview1.Selected.SubItems.Objects[0]);
+    if Assigned(tempthread.frmControl) = false then
+    begin
+      tempFormControl := TForm3.Create(nil);
+      tempFormControl.InitializeForm(tempThread);
+      tempThread.frmControl := tempFormControl;
+    end;
+    TForm3(tempThread.frmControl).Show;
+  end;
 end;
 
 procedure TForm1.ServerSocket1ClientConnect(Sender: TObject;
@@ -50,6 +74,7 @@ Begin
   ClientThread := TClientThread.Create(True);
   ClientThread.mySocket := Socket;
   Socket.Data := ClientThread;
+  ClientThread.RequestInformation();
 end;
 
 procedure TForm1.ServerSocket1ClientDisconnect(Sender: TObject;
